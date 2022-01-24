@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -47,6 +48,11 @@ func NewReaper(ctx context.Context, sessionID string, provider ReaperProvider, r
 		return reaper, nil
 	}
 
+	dockerSocket := os.Getenv("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE")
+	if dockerSocket == "" {
+		dockerSocket = "/var/run/docker.sock"
+	}
+
 	// Otherwise create a new one
 	reaper = &Reaper{
 		Provider:  provider,
@@ -63,7 +69,7 @@ func NewReaper(ctx context.Context, sessionID string, provider ReaperProvider, r
 			TestcontainerLabelIsReaper: "true",
 		},
 		SkipReaper: true,
-		Mounts:     Mounts(BindMount("/var/run/docker.sock", "/var/run/docker.sock")),
+		Mounts:     Mounts(BindMount(dockerSocket, "/var/run/docker.sock")),
 		AutoRemove: true,
 		WaitingFor: wait.ForListeningPort(listeningPort),
 	}
